@@ -10,8 +10,3 @@ apt-get update -y
 apt-get install \
     libguestfs-tools \
     -y
-
-virt-builder debian-12 \
-    --hostname okLinux.oknotok.computer \
-    --root-password password:root \
-    --copy-in

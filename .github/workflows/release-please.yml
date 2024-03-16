@@ -1,0 +1,23 @@
+name: Propose Release
+
+on:
+  push:
+    branches:
+      - main
+  
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - uses: google-github-actions/release-please-action@v4
+        id: release
+        with:
+          release-type: simple
