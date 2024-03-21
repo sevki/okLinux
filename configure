@@ -15,7 +15,7 @@ dependencies=(
 apt-get install -y "${dependencies[@]}"
 
 # Download the kernel
-curl -L https://api.github.com/repos/sevki/kernel/actions/artifacts/1337302799/zip | unzip -d /tmp -
+curl -L https://oknotok.computer/oklinux-kernel-x86_64-6.6.22-0bc4486793389b5d730593223945ddd2804ba80c.bzImage -o oklinux-kernel-x86_64-6.6.22-0bc4486793389b5d730593223945ddd2804ba80c.bzImage
 # Verify the hash
-echo "d68ea7684973c4a0666815138f0cdaeab7b1fc5a4730acb6e29c942e2bf1186f  kernel-x86_64-6.6.22-e4d92a0cf76fdbd3dbeae1394fc9d3033b683fb7.tar.gz' | sha256sum -c -
+echo "4055a58720232a76b685bdbfee44e7d24c86f682444f8cb308025c2ec913eeb2  oklinux-kernel-x86_64-6.6.22-0bc4486793389b5d730593223945ddd2804ba80c.bzImage' | sha256sum -c -
 
