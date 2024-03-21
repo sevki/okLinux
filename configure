@@ -15,7 +15,7 @@ dependencies=(
 apt-get install -y "${dependencies[@]}"
 
 # Download the kernel
-curl -L https://oknotok.computer/oklinux-kernel-x86_64-6.6.22-0bc4486793389b5d730593223945ddd2804ba80c.bzImage -o oklinux-kernel-x86_64-6.6.22-0bc4486793389b5d730593223945ddd2804ba80c.bzImage
+curl -L https://oknotok.computer/oklinux-kernel-x86_64-6.6.22-b63af5480c93c9f79a6d13d13eac570d4afe958a -o oklinux-kernel-x86_64-6.6.22-b63af5480c93c9f79a6d13d13eac570d4afe958a
 # Verify the hash
-echo "4055a58720232a76b685bdbfee44e7d24c86f682444f8cb308025c2ec913eeb2  oklinux-kernel-x86_64-6.6.22-0bc4486793389b5d730593223945ddd2804ba80c.bzImage' | sha256sum -c -
+echo "af667e7f7ec8bfd0e87ef90c35bc772de254ba8ff1e1cdd2a63d6750442717d0  oklinux-kernel-x86_64-6.6.22-b63af5480c93c9f79a6d13d13eac570d4afe958a" | sha256sum -c -
 
