@@ -18,8 +18,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-mod
 source ${CARGO_HOME:-~/.cargo}/env
 
 # Download the kernel
-curl -L https://oknotok.computer/oklinux-kernel-x86_64-6.6.22-0edade2a0b0a3629edf358f2b290d92fdd6bdd16.tar.gz -o oklinux-kernel-x86_64-6.6.22-0edade2a0b0a3629edf358f2b290d92fdd6bdd16.tar.gz
+curl -L https://oknotok.computer/oklinux-kernel-x86_64-6.6.21-6d8b13c9a73bec9bb3c4101ba9fb903acb9b8730.tar.gz -o oklinux-kernel-x86_64-6.6.21-6d8b13c9a73bec9bb3c4101ba9fb903acb9b8730.tar.gz
 # Verify the hash
-echo "2e05b0335ae9cbad7b05d5ee3d37406ecd84cbc3ad0d0c49239b8fd486f49a0a  oklinux-kernel-x86_64-6.6.22-0edade2a0b0a3629edf358f2b290d92fdd6bdd16.tar.gz" | sha256sum -c -
+echo "5bdbe9f4f97e632b56df8a9e13da3f0c5a56cb1ed4355df8023befaca52f2574  oklinux-kernel-x86_64-6.6.21-6d8b13c9a73bec9bb3c4101ba9fb903acb9b8730.tar.gz" | sha256sum -c -
 
-echo "6.6.22" > kernel-version.txt
+echo "6.6.21" > kernel-version.txt
