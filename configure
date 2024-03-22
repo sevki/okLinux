@@ -14,8 +14,12 @@ dependencies=(
 
 apt-get install -y "${dependencies[@]}"
 
-# Download the kernel
-curl -L https://oknotok.computer/oklinux-kernel-x86_64-6.6.22-b63af5480c93c9f79a6d13d13eac570d4afe958a -o oklinux-kernel-x86_64-6.6.22-b63af5480c93c9f79a6d13d13eac570d4afe958a
-# Verify the hash
-echo "af667e7f7ec8bfd0e87ef90c35bc772de254ba8ff1e1cdd2a63d6750442717d0  oklinux-kernel-x86_64-6.6.22-b63af5480c93c9f79a6d13d13eac570d4afe958a" | sha256sum -c -
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+source ${CARGO_HOME:-~/.cargo}/env
 
+# Download the kernel
+curl -L https://oknotok.computer/oklinux-kernel-x86_64-6.6.22-0edade2a0b0a3629edf358f2b290d92fdd6bdd16.tar.gz -o oklinux-kernel-x86_64-6.6.22-0edade2a0b0a3629edf358f2b290d92fdd6bdd16.tar.gz
+# Verify the hash
+echo "2e05b0335ae9cbad7b05d5ee3d37406ecd84cbc3ad0d0c49239b8fd486f49a0a  oklinux-kernel-x86_64-6.6.22-0edade2a0b0a3629edf358f2b290d92fdd6bdd16.tar.gz" | sha256sum -c -
+
+echo "6.6.22" > kernel-version.txt
