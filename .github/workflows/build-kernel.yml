@@ -1,30 +1,42 @@
-# Build the ChromeOS kernel from sevki/kernel and publish a release
+# Build the ChromeOS kernel and publish a release, then update the website
 
 name: Build Kernel
 
 on:
-  workflow_run:
-    workflows: ["Sync Kernel"]
-    types: [completed]
+  schedule:
+    - cron: "0 0 * * *" # daily at midnight UTC
   workflow_dispatch:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     outputs:
       kernel_release: ${{ steps.meta.outputs.kernel_release }}
       commit_sha: ${{ steps.meta.outputs.commit_sha }}
       short_sha: ${{ steps.meta.outputs.short_sha }}
       tarball_name: ${{ steps.meta.outputs.tarball_name }}
+    env:
+      MDBOOK_VERSION: "0.4.36"
     steps:
-      - name: Checkout kernel source
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Clone upstream kernel source
         run: |
-          git clone --depth 1 --branch chromeos-6.6 \
-            https://github.com/sevki/kernel.git kernel
+          git clone --depth 1 -b chromeos-6.6 \
+            https://chromium.googlesource.com/chromiumos/third_party/kernel \
+            kernel
 
       - name: Install build dependencies
         run: |
@@ -85,3 +97,43 @@ jobs:
           - Kernel release: \`${{ steps.meta.outputs.kernel_release }}\`
           - Upstream commit: \`${{ steps.meta.outputs.commit_sha }}\`" \
             "${TARBALL}" "${TARBALL}.sha256"
+
+      - name: Update kernel-version.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="kernel-${{ steps.meta.outputs.kernel_release }}-$(date +%Y%m%d)-${{ steps.meta.outputs.short_sha }}"
+          VERSION=$(echo "${TAG}" | sed 's/^kernel-//;s/-[0-9]\{8\}-.*$//')
+          echo "${VERSION}" > kernel-version.txt
+
+      - name: Commit version bump
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet kernel-version.txt 2>/dev/null; then
+            git add kernel-version.txt
+            git commit -m "chore: bump kernel version"
+            git push
+          fi
+
+      - name: Install mdBook
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . "$HOME/.cargo/env"
+          cargo install --version ${MDBOOK_VERSION} mdbook
+
+      - name: Build website
+        run: |
+          . "$HOME/.cargo/env"
+          mdbook build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./book
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
