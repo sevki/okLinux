@@ -49,7 +49,16 @@ jobs:
         working-directory: kernel
         run: |
           CHROMEOS_KERNEL_FAMILY=termina ./chromeos/scripts/prepareconfig container-vm-x86_64
+          scripts/config --enable CONFIG_BLK_DEV_INITRD
+          scripts/config --enable CONFIG_RD_GZIP
+          scripts/config --enable CONFIG_RD_BZIP2
+          scripts/config --enable CONFIG_RD_LZMA
+          scripts/config --enable CONFIG_RD_XZ
+          scripts/config --enable CONFIG_RD_LZO
+          scripts/config --enable CONFIG_RD_LZ4
+          scripts/config --enable CONFIG_RD_ZSTD
           make olddefconfig
+
 
       - name: Build bzImage
         working-directory: kernel
