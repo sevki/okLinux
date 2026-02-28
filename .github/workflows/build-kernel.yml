@@ -1,0 +1,87 @@
+# Build the ChromeOS kernel from sevki/kernel and publish a release
+
+name: Build Kernel
+
+on:
+  workflow_run:
+    workflows: ["Sync Kernel"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      kernel_release: ${{ steps.meta.outputs.kernel_release }}
+      commit_sha: ${{ steps.meta.outputs.commit_sha }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+      tarball_name: ${{ steps.meta.outputs.tarball_name }}
+    steps:
+      - name: Checkout kernel source
+        run: |
+          git clone --depth 1 --branch chromeos-6.6 \
+            https://github.com/sevki/kernel.git kernel
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential bc kmod cpio flex libncurses5-dev \
+            libelf-dev libssl-dev dwarves bison
+
+      - name: Configure kernel
+        working-directory: kernel
+        run: |
+          CHROMEOS_KERNEL_FAMILY=termina ./chromeos/scripts/prepareconfig container-vm-x86_64
+          make olddefconfig
+
+      - name: Build bzImage
+        working-directory: kernel
+        run: make -j"$(nproc)" bzImage
+
+      - name: Collect metadata
+        id: meta
+        working-directory: kernel
+        run: |
+          KERNEL_RELEASE=$(make -s kernelrelease)
+          COMMIT_SHA=$(git rev-parse HEAD)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TARBALL="oklinux-kernel-x86_64-${KERNEL_RELEASE}-${COMMIT_SHA}.tar.gz"
+          echo "kernel_release=${KERNEL_RELEASE}" >> "$GITHUB_OUTPUT"
+          echo "commit_sha=${COMMIT_SHA}"         >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHORT_SHA}"            >> "$GITHUB_OUTPUT"
+          echo "tarball_name=${TARBALL}"            >> "$GITHUB_OUTPUT"
+
+      - name: Package kernel
+        run: |
+          TARBALL="${{ steps.meta.outputs.tarball_name }}"
+          tar czf "${TARBALL}" -C kernel arch/x86/boot/bzImage
+          sha256sum "${TARBALL}" | tee "${TARBALL}.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-build
+          path: |
+            oklinux-kernel-*.tar.gz
+            oklinux-kernel-*.tar.gz.sha256
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="kernel-${{ steps.meta.outputs.kernel_release }}-$(date +%Y%m%d)-${{ steps.meta.outputs.short_sha }}"
+          TARBALL="${{ steps.meta.outputs.tarball_name }}"
+
+          gh release create "${TAG}" \
+            --repo "${{ github.repository }}" \
+            --title "Kernel ${TAG}" \
+            --notes "Automated kernel build from chromeos-6.6 branch.
+
+          - Kernel release: \`${{ steps.meta.outputs.kernel_release }}\`
+          - Upstream commit: \`${{ steps.meta.outputs.commit_sha }}\`" \
+            "${TARBALL}" "${TARBALL}.sha256"

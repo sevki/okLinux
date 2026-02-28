@@ -1,0 +1,75 @@
+# Update kernel-version.txt and redeploy the website on new release
+
+name: Update Website
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      MDBOOK_VERSION: "0.4.36"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Update kernel-version.txt from release tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG=$(gh release list --repo "${{ github.repository }}" --limit 1 \
+              --json tagName --jq '.[0].tagName // empty')
+          fi
+          if [ -n "${TAG}" ]; then
+            # Tag format: kernel-<version>-<date>-<sha>  →  extract <version>
+            VERSION=$(echo "${TAG}" | sed 's/^kernel-//;s/-[0-9]\{8\}-.*$//')
+            echo "${VERSION}" > kernel-version.txt
+          fi
+
+      - name: Commit version bump
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet kernel-version.txt 2>/dev/null; then
+            git add kernel-version.txt
+            git commit -m "chore: bump kernel version"
+            git push
+          fi
+
+      - name: Install mdBook
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . "$HOME/.cargo/env"
+          cargo install --version ${MDBOOK_VERSION} mdbook
+
+      - name: Build website
+        run: |
+          . "$HOME/.cargo/env"
+          mdbook build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./book
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
