@@ -1,0 +1,256 @@
+// okLinux terminal theme
+
+:root {
+    --font-sans:
+        ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, "Courier New",
+        monospace;
+    --font-mono:
+        ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, "Courier New",
+        monospace;
+    --max-width: 48rem;
+    --color-bg: #1a1a1a;
+    --color-text: #d4d4d4;
+    --color-text-muted: #808080;
+    --color-link: #4ec94e;
+    --color-link-hover: #6adf6a;
+    --color-border: #333333;
+    --color-code-bg: #0d0d0d;
+    --color-accent: #4ec94e;
+    --color-prompt: #a0a0a0;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --color-bg: #f5f5f0;
+        --color-text: #1a1a1a;
+        --color-text-muted: #666666;
+        --color-link: #2d7a2d;
+        --color-link-hover: #1a5c1a;
+        --color-border: #cccccc;
+        --color-code-bg: #e8e8e0;
+        --color-accent: #2d7a2d;
+        --color-prompt: #666666;
+    }
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.7;
+    padding: 2rem 1rem;
+}
+
+main {
+    max-width: var(--max-width);
+    margin: 0 auto;
+}
+
+// Header
+.site-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+
+    .logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .site-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--color-accent);
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: none;
+            opacity: 0.8;
+        }
+    }
+
+    nav {
+        margin-left: auto;
+        margin-bottom: 0;
+
+        a {
+            color: var(--color-text-muted);
+            margin-left: 1.5rem;
+            font-size: 0.875rem;
+
+            &:hover {
+                color: var(--color-accent);
+                text-decoration: none;
+            }
+
+            &::before {
+                content: "$ ";
+                color: var(--color-prompt);
+            }
+        }
+    }
+}
+
+// Typography
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 2rem 0 1rem;
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--color-accent);
+}
+
+h1 {
+    font-size: 1.75rem;
+    margin-top: 0;
+}
+h2 {
+    font-size: 1.375rem;
+}
+h3 {
+    font-size: 1.125rem;
+}
+
+p,
+ul,
+ol {
+    margin-bottom: 1rem;
+}
+
+ul,
+ol {
+    padding-left: 1.5rem;
+}
+
+li {
+    margin-bottom: 0.25rem;
+}
+
+// Links
+a {
+    color: var(--color-link);
+    text-decoration: none;
+
+    &:hover {
+        color: var(--color-link-hover);
+        text-decoration: underline;
+    }
+}
+
+// Code
+pre,
+code {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+}
+
+code {
+    background: var(--color-code-bg);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+}
+
+pre {
+    background: var(--color-code-bg);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+    border: 1px solid var(--color-border);
+
+    code {
+        background: none;
+        padding: 0;
+    }
+}
+
+// Navigation
+nav {
+    margin-bottom: 2rem;
+
+    a {
+        color: var(--color-text-muted);
+
+        &:hover {
+            color: var(--color-link);
+        }
+    }
+}
+
+// Article
+article {
+    h1:first-child {
+        margin-top: 0;
+    }
+}
+
+// Horizontal rule
+hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 2rem 0;
+}
+
+// Blockquote
+blockquote {
+    border-left: 3px solid var(--color-accent);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: var(--color-text-muted);
+}
+
+// Downloads page
+.releases {
+    list-style: none;
+    padding-left: 0;
+
+    li {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0.5rem;
+        background: var(--color-code-bg);
+    }
+
+    .release-tag {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--color-accent);
+    }
+
+    .release-date {
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+        margin-left: 1rem;
+    }
+
+    .release-assets {
+        margin-top: 0.5rem;
+        padding-left: 1.5rem;
+
+        a::before {
+            content: "↓ ";
+        }
+    }
+}

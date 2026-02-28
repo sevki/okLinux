@@ -1,0 +1,17 @@
+{% extends "base.html" %} {% block title %}{{ section.title }}{% endblock %} {%
+block content %}
+<img
+    src="{{ get_url(path='oklinux.png') }}"
+    alt="okLinux"
+    style="max-width: 200px; display: block; margin: 0 auto"
+/>
+<h1>{{ section.title }}</h1>
+{{ section.content | safe }} {% if section.subsections %}
+<hr />
+
+<ul>
+    {% for sub in section.subsections %}
+    <li><a href="{{ sub.permalink }}">{{ sub.title }}</a></li>
+    {% endfor %}
+</ul>
+{% endif %} {% endblock %}
