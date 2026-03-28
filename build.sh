@@ -15,7 +15,7 @@ fi
 # --- Install build dependencies ---
 sudo apt-get update
 sudo apt-get install -y \
-  build-essential bc kmod cpio flex libncurses5-dev \
+  git build-essential bc kmod cpio flex libncurses5-dev \
   libelf-dev libssl-dev dwarves bison \
   libguestfs-tools
 
