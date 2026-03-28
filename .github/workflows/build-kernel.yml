@@ -1,19 +1,21 @@
-# Build the ChromeOS kernel and publish a release, then update the website
+# Build the ChromeOS kernel and publish a release
 
 name: Build Kernel
 
 on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   schedule:
     - cron: "0 0 * * *" # daily at midnight UTC
   workflow_dispatch:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
-  group: "pages"
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -24,16 +26,13 @@ jobs:
       commit_sha: ${{ steps.meta.outputs.commit_sha }}
       short_sha: ${{ steps.meta.outputs.short_sha }}
       tarball_name: ${{ steps.meta.outputs.tarball_name }}
-    env:
-      MDBOOK_VERSION: "0.4.36"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: main
 
       - name: Check if release already exists
         id: check
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -55,12 +54,12 @@ jobs:
           fi
 
       - name: Build kernel
-        if: steps.check.outputs.exists == 'false'
+        if: github.event_name == 'pull_request' || steps.check.outputs.exists == 'false'
         id: meta
         run: bash build.sh
 
       - name: Upload artifact
-        if: steps.check.outputs.exists == 'false'
+        if: github.event_name == 'pull_request' || steps.check.outputs.exists == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: kernel-build
@@ -69,7 +68,7 @@ jobs:
             oklinux-kernel-*.tar.gz.sha256
 
       - name: Publish GitHub Release
-        if: steps.check.outputs.exists == 'false'
+        if: github.event_name != 'pull_request' && steps.check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -86,14 +85,14 @@ jobs:
             "${TARBALL}" "${TARBALL}.sha256"
 
       - name: Update kernel-version.txt
-        if: steps.check.outputs.exists == 'false'
+        if: github.event_name != 'pull_request' && steps.check.outputs.exists == 'false'
         run: |
           TAG="kernel-${{ steps.meta.outputs.kernel_release }}-${{ steps.meta.outputs.short_sha }}"
           VERSION="${{ steps.meta.outputs.kernel_release }}"
           echo "${VERSION}" > kernel-version.txt
 
       - name: Commit version bump
-        if: steps.check.outputs.exists == 'false'
+        if: github.event_name != 'pull_request' && steps.check.outputs.exists == 'false'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
