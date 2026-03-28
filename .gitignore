@@ -1,2 +1,6 @@
 # Added by cargo
 /target
+/scrape-syscalls/target
+/okLinux-sys/target
+/kernel
+/reverie

@@ -32,58 +32,35 @@ jobs:
         with:
           ref: main
 
-      - name: Clone upstream kernel source
+      - name: Check if release already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Clone kernel source to discover the upstream commit
           git clone --depth 1 -b chromeos-6.6 \
             https://chromium.googlesource.com/chromiumos/third_party/kernel \
             kernel
+          SHORT_SHA=$(git -C kernel rev-parse --short HEAD)
+          KERNEL_RELEASE=$(make -C kernel -s kernelrelease 2>/dev/null || echo "unknown")
+          TAG="kernel-${KERNEL_RELEASE}-${SHORT_SHA}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential bc kmod cpio flex libncurses5-dev \
-            libelf-dev libssl-dev dwarves bison
+          if gh release view "${TAG}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "Release ${TAG} already exists, skipping build."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Release ${TAG} does not exist, proceeding with build."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Configure kernel
-        working-directory: kernel
-        run: |
-          CHROMEOS_KERNEL_FAMILY=termina ./chromeos/scripts/prepareconfig container-vm-x86_64
-          scripts/config --enable CONFIG_BLK_DEV_INITRD
-          scripts/config --enable CONFIG_RD_GZIP
-          scripts/config --enable CONFIG_RD_BZIP2
-          scripts/config --enable CONFIG_RD_LZMA
-          scripts/config --enable CONFIG_RD_XZ
-          scripts/config --enable CONFIG_RD_LZO
-          scripts/config --enable CONFIG_RD_LZ4
-          scripts/config --enable CONFIG_RD_ZSTD
-          make olddefconfig
-
-
-      - name: Build bzImage
-        working-directory: kernel
-        run: make -j"$(nproc)" bzImage
-
-      - name: Collect metadata
+      - name: Build kernel
+        if: steps.check.outputs.exists == 'false'
         id: meta
-        working-directory: kernel
-        run: |
-          KERNEL_RELEASE=$(make -s kernelrelease)
-          COMMIT_SHA=$(git rev-parse HEAD)
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          TARBALL="oklinux-kernel-x86_64-${KERNEL_RELEASE}-${COMMIT_SHA}.tar.gz"
-          echo "kernel_release=${KERNEL_RELEASE}" >> "$GITHUB_OUTPUT"
-          echo "commit_sha=${COMMIT_SHA}"         >> "$GITHUB_OUTPUT"
-          echo "short_sha=${SHORT_SHA}"            >> "$GITHUB_OUTPUT"
-          echo "tarball_name=${TARBALL}"            >> "$GITHUB_OUTPUT"
-
-      - name: Package kernel
-        run: |
-          TARBALL="${{ steps.meta.outputs.tarball_name }}"
-          tar czf "${TARBALL}" -C kernel arch/x86/boot/bzImage
-          sha256sum "${TARBALL}" | tee "${TARBALL}.sha256"
+        run: bash build.sh
 
       - name: Upload artifact
+        if: steps.check.outputs.exists == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: kernel-build
@@ -92,10 +69,11 @@ jobs:
             oklinux-kernel-*.tar.gz.sha256
 
       - name: Publish GitHub Release
+        if: steps.check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="kernel-${{ steps.meta.outputs.kernel_release }}-$(date +%Y%m%d)-${{ steps.meta.outputs.short_sha }}"
+          TAG="kernel-${{ steps.meta.outputs.kernel_release }}-${{ steps.meta.outputs.short_sha }}"
           TARBALL="${{ steps.meta.outputs.tarball_name }}"
 
           gh release create "${TAG}" \
@@ -108,14 +86,14 @@ jobs:
             "${TARBALL}" "${TARBALL}.sha256"
 
       - name: Update kernel-version.txt
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.check.outputs.exists == 'false'
         run: |
-          TAG="kernel-${{ steps.meta.outputs.kernel_release }}-$(date +%Y%m%d)-${{ steps.meta.outputs.short_sha }}"
-          VERSION=$(echo "${TAG}" | sed 's/^kernel-//;s/-[0-9]\{8\}-.*$//')
+          TAG="kernel-${{ steps.meta.outputs.kernel_release }}-${{ steps.meta.outputs.short_sha }}"
+          VERSION="${{ steps.meta.outputs.kernel_release }}"
           echo "${VERSION}" > kernel-version.txt
 
       - name: Commit version bump
+        if: steps.check.outputs.exists == 'false'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
