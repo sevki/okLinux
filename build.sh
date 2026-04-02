@@ -91,9 +91,9 @@ make -j"$(nproc)" bzImage
 KERNEL_RELEASE=$(make -s kernelrelease)
 COMMIT_SHA=$(git rev-parse HEAD)
 SHORT_SHA=$(git rev-parse --short HEAD)
-TARBALL="oklinux-kernel-x86_64-${KERNEL_RELEASE}-${COMMIT_SHA}.tar.gz"
 BZIMAGE_ASSET="oklinux-bzImage-x86_64-${KERNEL_RELEASE}-${COMMIT_SHA}"
 VMLINUX_ASSET="oklinux-vmlinux-x86_64-${KERNEL_RELEASE}-${COMMIT_SHA}"
+CHECKSUM_FILE="oklinux-kernel-x86_64-${KERNEL_RELEASE}-${COMMIT_SHA}.sha256"
 
 cd "$SCRIPT_DIR"
 
@@ -101,15 +101,14 @@ cd "$SCRIPT_DIR"
 cp "kernel/arch/x86/boot/bzImage" "${BZIMAGE_ASSET}"
 cp "kernel/vmlinux" "${VMLINUX_ASSET}"
 
-tar czf "${TARBALL}" -C kernel arch/x86/boot/bzImage vmlinux
-sha256sum "${TARBALL}" "${BZIMAGE_ASSET}" "${VMLINUX_ASSET}" | tee "${TARBALL}.sha256"
+sha256sum "${BZIMAGE_ASSET}" "${VMLINUX_ASSET}" | tee "${CHECKSUM_FILE}"
 
 # --- Export metadata for CI consumption ---
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   echo "kernel_release=${KERNEL_RELEASE}" >> "$GITHUB_OUTPUT"
   echo "commit_sha=${COMMIT_SHA}"         >> "$GITHUB_OUTPUT"
   echo "short_sha=${SHORT_SHA}"            >> "$GITHUB_OUTPUT"
-  echo "tarball_name=${TARBALL}"            >> "$GITHUB_OUTPUT"
   echo "bzimage_asset=${BZIMAGE_ASSET}"      >> "$GITHUB_OUTPUT"
   echo "vmlinux_asset=${VMLINUX_ASSET}"      >> "$GITHUB_OUTPUT"
+  echo "checksum_file=${CHECKSUM_FILE}"      >> "$GITHUB_OUTPUT"
 fi

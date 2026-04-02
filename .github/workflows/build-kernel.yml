@@ -25,9 +25,9 @@ jobs:
       kernel_release: ${{ steps.meta.outputs.kernel_release }}
       commit_sha: ${{ steps.meta.outputs.commit_sha }}
       short_sha: ${{ steps.meta.outputs.short_sha }}
-      tarball_name: ${{ steps.meta.outputs.tarball_name }}
       bzimage_asset: ${{ steps.meta.outputs.bzimage_asset }}
       vmlinux_asset: ${{ steps.meta.outputs.vmlinux_asset }}
+      checksum_file: ${{ steps.meta.outputs.checksum_file }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -66,10 +66,9 @@ jobs:
         with:
           name: kernel-build
           path: |
-            oklinux-kernel-*.tar.gz
-            oklinux-kernel-*.tar.gz.sha256
             oklinux-bzImage-x86_64-*
             oklinux-vmlinux-x86_64-*
+            oklinux-kernel-x86_64-*.sha256
 
       - name: Publish GitHub Release
         if: github.event_name != 'pull_request' && steps.check.outputs.exists == 'false'
@@ -77,9 +76,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="kernel-${{ steps.meta.outputs.kernel_release }}-${{ steps.meta.outputs.short_sha }}"
-          TARBALL="${{ steps.meta.outputs.tarball_name }}"
           BZIMAGE="${{ steps.meta.outputs.bzimage_asset }}"
           VMLINUX="${{ steps.meta.outputs.vmlinux_asset }}"
+          CHECKSUM="${{ steps.meta.outputs.checksum_file }}"
 
           gh release create "${TAG}" \
             --repo "${{ github.repository }}" \
@@ -88,7 +87,7 @@ jobs:
 
           - Kernel release: \`${{ steps.meta.outputs.kernel_release }}\`
           - Upstream commit: \`${{ steps.meta.outputs.commit_sha }}\`" \
-            "${TARBALL}" "${TARBALL}.sha256" "${BZIMAGE}" "${VMLINUX}"
+            "${BZIMAGE}" "${VMLINUX}" "${CHECKSUM}"
 
       - name: Update kernel-version.txt
         if: github.event_name != 'pull_request' && steps.check.outputs.exists == 'false'
